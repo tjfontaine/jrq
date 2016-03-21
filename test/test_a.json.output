@@ -1,0 +1,8 @@
+{
+  "foobar": true,
+  "baz": 123,
+  "bar": null,
+  "boo": {
+    "foobar": false
+  }
+}

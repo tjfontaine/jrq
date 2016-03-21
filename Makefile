@@ -39,4 +39,4 @@ obj/%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 run: clean jrq
-	echo '{"foobar": {"baz": "bat" }}' | $(BUILDDIR)/jrq foobar
+	find test/ -name \*.json -exec bash -c 'cat {} | $(BUILDDIR)/jrq -a | diff -u {}.output -' \;

@@ -46,8 +46,8 @@ duk_ret_t
 jrq_write(duk_context *ctx)
 {
   int fd = duk_require_int(ctx, 0);
-  const char* str = duk_require_string(ctx, 1);
-  size_t len = strlen(str);
+  duk_size_t len = 0;
+  const char* str = duk_require_lstring(ctx, 1, &len);
   ssize_t bytesWritten = 0; 
 
   bytesWritten = write(fd, str, len);

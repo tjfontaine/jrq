@@ -1,18 +1,39 @@
 function FakeStream(jrq, fd) { 
+  if (!(this instanceof FakeStream))
+    return new FakeStream(jrq, fd);
+
+  EventEmitter.call(this);
+
+  this._eof = false;
   this.jrq = jrq;
   this.fd = fd;
-  this._events = {};
+  this._internalBuffer = [];
 }
 
+FakeStream.prototype.on = EventEmitter.prototype.on;
+FakeStream.prototype.emit = EventEmitter.prototype.emit;
+
 FakeStream.prototype.read = function read(size) {
-  var str = this.jrq.read(this.fd, size);
+  var str;
+
+  if (this._internalBuffer.length) {
+    str = this._internalBuffer.shift();
+  } else {
+    str = this.jrq.read(this.fd, size);
+  }
 
   if (str != null)
     this.emit('data', str);
-  else
+  else {
+    this._eof = true;
     this.emit('end');
+  }
 
   return str;
+};
+
+FakeStream.prototype.unshift = function unshift(str) {
+  this._internalBuffer.push(str);
 };
 
 FakeStream.prototype.write = function write(str) {
@@ -27,19 +48,6 @@ FakeStream.prototype.flush = function flush() {
   this.jrq.fsync(this.fd);
 };
 
-FakeStream.prototype.on = function(handler, cb) {
-  var fns = this._events[handler] = this._events[handler] || [];
-  fns.push(cb);
-  return this;
-};
-
-FakeStream.prototype.emit = function(handler, data) {
-  var fns = this._events[handler] || [];
-  for (var i = 0; i < fns.length; i++) {
-    fns[i](data);
-  }
-};
-
 FakeStream.prototype.resume = function() {
   str = this.read(4096);
   while (str != null) {
@@ -49,3 +57,7 @@ FakeStream.prototype.resume = function() {
 
 FakeStream.prototype.pause = function() {};
 FakeStream.prototype.pipe = function() {};
+
+FakeStream.prototype.isReadable = function() {
+  return this._internalBuffer.length > 0 || !this._eof;
+};
